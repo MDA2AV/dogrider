@@ -1,3 +1,3 @@
 dogrider
 
-noun | Canisvectorium, from Latin canis “dog” + vectorium “that which carries”
+A stripped lightweight adaptation of (GenHTTP)[genhttp.org] websocket modules with a different backend
