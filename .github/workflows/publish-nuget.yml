@@ -1,0 +1,67 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g. 1.0.1)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="${{ inputs.version }}"
+          fi
+          if [ -z "$v" ]; then
+            echo "Could not resolve version" >&2
+            exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore dogrider/dogrider.csproj
+
+      - name: Build
+        run: >
+          dotnet build dogrider/dogrider.csproj
+          --configuration Release
+          --no-restore
+          -p:Version=${{ steps.ver.outputs.version }}
+
+      - name: Pack
+        run: >
+          dotnet pack dogrider/dogrider.csproj
+          --configuration Release
+          --no-build
+          --output artifacts
+          -p:Version=${{ steps.ver.outputs.version }}
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

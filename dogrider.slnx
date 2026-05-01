@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="dogrider/dogrider.csproj" />
+  <Project Path="dogrider.Demo/dogrider.Demo.csproj" />
+</Solution>
