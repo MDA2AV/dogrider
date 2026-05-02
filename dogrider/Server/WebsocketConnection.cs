@@ -123,7 +123,12 @@ internal sealed class WebsocketConnection : IConnection
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Write(ReadOnlyMemory<byte> payload, FrameType opcode = FrameType.Text, bool fin = true) => Frame.EncodeInto(_conn, payload.Span, ToOpcodeByte(opcode), fin);
+    public void Write(ReadOnlyMemory<byte> payload, FrameType opcode = FrameType.Text, bool fin = true) 
+        => Frame.EncodeInto(_conn, payload.Span, ToOpcodeByte(opcode), fin);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(ReadOnlySpan<byte> payload, FrameType opcode = FrameType.Text, bool fin = true) 
+        => Frame.EncodeInto(_conn, payload, ToOpcodeByte(opcode), fin);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Ping() => Frame.EncodePing(_conn);
