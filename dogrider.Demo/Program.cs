@@ -119,7 +119,7 @@ internal sealed class EchoHandlerPipelined : Handler
                         break;
                 }
                 
-                WebsocketConnection.FramePool.Return(frame);
+                Frame.Pool.Return(frame);
             }
 
             await connection.FlushAsync();

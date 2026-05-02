@@ -1,5 +1,4 @@
 using System.Buffers;
-using dogrider.Server;
 
 namespace dogrider.Protocol;
 
@@ -48,8 +47,9 @@ public static partial class Frame
         {
             consumed = reader.Position;
             examined = reader.Position;
-            
-            return new WebsocketFrame(new FrameError(InvalidOpCode, FrameErrorType.InvalidOpCode));
+
+            return Pool.Get().SetError(new FrameError(InvalidOpCode, FrameErrorType.InvalidOpCode));
+            //return new WebsocketFrame(new FrameError(InvalidOpCode, FrameErrorType.InvalidOpCode));
         }
 
         var isControlFrame = frameType is FrameType.Close or FrameType.Ping or FrameType.Pong;
@@ -61,7 +61,8 @@ public static partial class Frame
             consumed = reader.Position;
             examined = reader.Position;
             
-            return new WebsocketFrame(new FrameError(InvalidControlFrame, FrameErrorType.InvalidControlFrame));
+            return Pool.Get().SetError(new FrameError(InvalidControlFrame, FrameErrorType.InvalidControlFrame));
+            //return new WebsocketFrame(new FrameError(InvalidControlFrame, FrameErrorType.InvalidControlFrame));
         }
 
         if (isControlFrame && payloadLen7 >= 126)
@@ -69,7 +70,8 @@ public static partial class Frame
             consumed = reader.Position;
             examined = reader.Position;
             
-            return new WebsocketFrame(new FrameError(InvalidControlFrameLength, FrameErrorType.InvalidControlFrameLength));
+            return Pool.Get().SetError(new FrameError(InvalidControlFrameLength, FrameErrorType.InvalidControlFrameLength));
+            //return new WebsocketFrame(new FrameError(InvalidControlFrameLength, FrameErrorType.InvalidControlFrameLength));
         }
 
         long payloadLen64 = payloadLen7;
@@ -103,7 +105,8 @@ public static partial class Frame
             consumed = reader.Position;
             examined = reader.Position;
             
-            return new WebsocketFrame(new FrameError(PayloadTooLarge, FrameErrorType.PayloadTooLarge));
+            return Pool.Get().SetError(new FrameError(PayloadTooLarge, FrameErrorType.PayloadTooLarge));
+            //return new WebsocketFrame(new FrameError(PayloadTooLarge, FrameErrorType.PayloadTooLarge));
         }
 
         var payloadLength = (int)payloadLen64;
@@ -137,10 +140,8 @@ public static partial class Frame
         consumed = reader.Position;
         examined = reader.Position;
 
-        var frame = WebsocketConnection.FramePool.Get();
-        frame.Type = frameType;
-        frame.Payload = payloadSeq;
-        frame.Fin = fin;
+        var frame = Pool.Get();
+        frame.Set(frameType, payloadSeq, fin);
 
         return frame;
         //return new WebsocketFrame(frameType, payloadSeq, fin);
@@ -151,7 +152,8 @@ public static partial class Frame
         c = seq.Start;
         e = seq.End;
         
-        return new WebsocketFrame(new FrameError(IncompleteFrame, FrameErrorType.Incomplete));
+        return Pool.Get().SetError(new FrameError(IncompleteFrame, FrameErrorType.Incomplete));
+        //return new WebsocketFrame(new FrameError(IncompleteFrame, FrameErrorType.Incomplete));
     }
 
     private static unsafe void UnmaskInPlace(in ReadOnlySequence<byte> payload, ReadOnlySpan<byte> maskKey)

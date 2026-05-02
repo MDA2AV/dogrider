@@ -1,7 +1,6 @@
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using dogrider.Protocol;
-using Microsoft.Extensions.ObjectPool;
 using zerg;
 using zerg.core;
 
@@ -9,19 +8,6 @@ namespace dogrider.Server;
 
 public sealed class WebsocketConnection : IConnection
 {
-    public static readonly ObjectPool<WebsocketFrame> FramePool =
-        new DefaultObjectPool<WebsocketFrame>(new FramePoolPolicy(), 8192 * 4);
-    
-    private class FramePoolPolicy : PooledObjectPolicy<WebsocketFrame>
-    {
-        public override WebsocketFrame Create() => new();
-        
-        public override bool Return(WebsocketFrame context)
-        {
-            return true;
-        }
-    }
-    
     private readonly Connection _conn;
     private readonly PipeReader _reader;
     private WebsocketFrame[] _frameBuffer = new WebsocketFrame[16];
@@ -44,7 +30,8 @@ public sealed class WebsocketConnection : IConnection
 
             if (result is { IsCompleted: true, Buffer.IsEmpty: true })
             {
-                return new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                return Frame.GetErrorFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                //return new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
             }
 
             var sequence = result.Buffer;
@@ -55,7 +42,9 @@ public sealed class WebsocketConnection : IConnection
                 if (result.IsCompleted)
                 {
                     _reader.AdvanceTo(sequence.End);
-                    return new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                    
+                    return Frame.GetErrorFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                    //return new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
                 }
                 _reader.AdvanceTo(consumed, examined);
                 continue;
@@ -77,7 +66,10 @@ public sealed class WebsocketConnection : IConnection
             if (result is { IsCompleted: true, Buffer.IsEmpty: true })
             {
                 EnsureFrameCapacity(count + 1);
-                _frameBuffer[count++] = new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+
+                _frameBuffer[count++] =
+                    Frame.GetErrorFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                //_frameBuffer[count++] = new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
                 
                 return new ArraySegment<WebsocketFrame>(_frameBuffer, 0, count);
             }
@@ -113,7 +105,10 @@ public sealed class WebsocketConnection : IConnection
                 {
                     _reader.AdvanceTo(sequence.End);
                     EnsureFrameCapacity(1);
-                    _frameBuffer[count++] = new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                    
+                    _frameBuffer[count++] =
+                        Frame.GetErrorFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
+                    //_frameBuffer[count++] = new WebsocketFrame(new FrameError("Connection closed", FrameErrorType.ConnectionClosed));
                     
                     return new ArraySegment<WebsocketFrame>(_frameBuffer, 0, count);
                 }
