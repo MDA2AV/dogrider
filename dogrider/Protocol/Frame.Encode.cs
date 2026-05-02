@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 using System.Text;
 using zerg.core;
 
@@ -59,6 +60,7 @@ public static partial class Frame
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int HeaderLength(int payloadLen) => payloadLen switch
     {
         <= MaxSmallPayloadLength => 2,
@@ -89,6 +91,7 @@ public static partial class Frame
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ValidateOpcodeFin(byte opcode, bool fin)
     {
         if (opcode != 0x00 && opcode != 0x01 && opcode != 0x02 && opcode < 0x08)

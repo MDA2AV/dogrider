@@ -1,3 +1,3 @@
 namespace dogrider.Server;
 
-public record ConnectionSettings(int RxBufferSize = 16 * 1024);
+public record ConnectionSettings(int RxBufferSize = 1 * 512);
