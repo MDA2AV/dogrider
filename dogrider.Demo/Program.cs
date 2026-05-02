@@ -118,6 +118,8 @@ internal sealed class EchoHandlerPipelined : Handler
                     case FrameType.Continue:
                         break;
                 }
+                
+                WebsocketConnection.FramePool.Return(frame);
             }
 
             await connection.FlushAsync();

@@ -1,13 +1,27 @@
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using dogrider.Protocol;
+using Microsoft.Extensions.ObjectPool;
 using zerg;
 using zerg.core;
 
 namespace dogrider.Server;
 
-internal sealed class WebsocketConnection : IConnection
+public sealed class WebsocketConnection : IConnection
 {
+    public static readonly ObjectPool<WebsocketFrame> FramePool =
+        new DefaultObjectPool<WebsocketFrame>(new FramePoolPolicy(), 8192 * 4);
+    
+    private class FramePoolPolicy : PooledObjectPolicy<WebsocketFrame>
+    {
+        public override WebsocketFrame Create() => new();
+        
+        public override bool Return(WebsocketFrame context)
+        {
+            return true;
+        }
+    }
+    
     private readonly Connection _conn;
     private readonly PipeReader _reader;
     private WebsocketFrame[] _frameBuffer = new WebsocketFrame[16];

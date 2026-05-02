@@ -3,13 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace dogrider.Protocol;
 
-public readonly struct WebsocketFrame
+public class WebsocketFrame
 {
-    public FrameType Type { get; }
+    public FrameType Type { get; set; }
     
-    public bool Fin { get; }
+    public bool Fin { get; set; }
     
-    public ReadOnlySequence<byte> Payload { get; }
+    public ReadOnlySequence<byte> Payload { get; set; }
 
     private readonly FrameError? _error;
     
@@ -29,6 +29,11 @@ public readonly struct WebsocketFrame
         Fin = true;
         Payload = ReadOnlySequence<byte>.Empty;
         _error = error;
+    }
+
+    public WebsocketFrame()
+    {
+        
     }
 
     public bool IsError([MaybeNullWhen(false)] out FrameError error)

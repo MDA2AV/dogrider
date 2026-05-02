@@ -1,4 +1,5 @@
 using System.Buffers;
+using dogrider.Server;
 
 namespace dogrider.Protocol;
 
@@ -136,7 +137,13 @@ public static partial class Frame
         consumed = reader.Position;
         examined = reader.Position;
 
-        return new WebsocketFrame(frameType, payloadSeq, fin);
+        var frame = WebsocketConnection.FramePool.Get();
+        frame.Type = frameType;
+        frame.Payload = payloadSeq;
+        frame.Fin = fin;
+
+        return frame;
+        //return new WebsocketFrame(frameType, payloadSeq, fin);
     }
 
     private static WebsocketFrame Incomplete(in ReadOnlySequence<byte> seq, out SequencePosition c, out SequencePosition e)
