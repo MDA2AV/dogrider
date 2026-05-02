@@ -11,6 +11,8 @@ public interface IConnection : IAsyncDisposable
     ValueTask<ArraySegment<WebsocketFrame>> ReadFramesAsync(CancellationToken token = default);
 
     void Write(ReadOnlyMemory<byte> payload, FrameType opcode = FrameType.Text, bool fin = true);
+
+    void Write(ReadOnlySpan<byte> payload, FrameType opcode = FrameType.Text, bool fin = true);
     
     void Ping();
 

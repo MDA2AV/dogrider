@@ -8,22 +8,24 @@ using zerg.Engine.Configs;
 
 namespace dogrider.Server;
 
-public sealed class DogriderServer : IAsyncDisposable
+public sealed class Dogrider : IAsyncDisposable
 {
     private readonly Engine _engine;
     private readonly Handler _handler;
+    
     private readonly ConnectionSettings _settings;
     private readonly CancellationTokenSource _stopCts = new();
+    
     private Task? _acceptLoop;
 
-    public DogriderServer(EngineOptions engineOptions, Handler handler, ConnectionSettings? settings = null)
+    public Dogrider(EngineOptions engineOptions, Handler handler, ConnectionSettings? settings = null)
     {
         _engine = new Engine(engineOptions);
         _handler = handler;
         _settings = settings ?? new ConnectionSettings();
     }
 
-    public DogriderServer(string ip, ushort port, int reactorCount, Handler handler, ConnectionSettings? settings = null)
+    public Dogrider(string ip, ushort port, int reactorCount, Handler handler, ConnectionSettings? settings = null)
         : this(new EngineOptions { Ip = ip, Port = port, ReactorCount = reactorCount }, handler, settings) { }
 
     public void Start()
@@ -195,8 +197,11 @@ public sealed class DogriderServer : IAsyncDisposable
         }
         
         var bigger = ArrayPool<byte>.Shared.Rent(Math.Max(needed, buf.Length * 2));
+        
         Buffer.BlockCopy(buf, 0, bigger, 0, buf.Length);
+        
         ArrayPool<byte>.Shared.Return(buf);
+        
         buf = bigger;
     }
 }
