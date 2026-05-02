@@ -38,7 +38,7 @@ internal static class Program
                     IncrementalBufferConsumption: false
                 )).ToArray()
             }, 
-            handler: new EchoHandler());
+            handler: new EchoHandlerPipelined());
         
         /*
         await using var server = new Dogrider(
@@ -65,7 +65,7 @@ internal static class Program
     }
 }
 
-internal sealed class EchoHandler : Handler
+internal sealed class EchoHandlerPipelined : Handler
 {
     
     private static ReadOnlySpan<byte> _hello => "hello"u8;
@@ -120,6 +120,63 @@ internal sealed class EchoHandler : Handler
                 }
             }
 
+            await connection.FlushAsync();
+        }
+    }
+}
+
+internal sealed class EchoHandler : Handler
+{
+    
+    private static ReadOnlySpan<byte> _hello => "hello"u8;
+    
+    public async ValueTask HandleAsync(IConnection connection)
+    {
+        while (true)
+        {
+            var frame = await connection.ReadFrameAsync();
+            
+            if (frame.IsError(out var err))
+            {
+                if (err.ErrorType is FrameErrorType.ConnectionClosed)
+                {
+                    return;
+                }
+                
+                await connection.CloseAsync(reason: err.Message, statusCode: 1002);
+                
+                return;
+            }
+
+            switch (frame.Type)
+            {
+                case FrameType.Text:
+                    
+                    //connection.Write(frame.Data);
+                    connection.Write(_hello);
+                    break;
+                
+                case FrameType.Binary:
+                    
+                    //connection.Write(frame.Data, FrameType.Binary);
+                    connection.Write(_hello, FrameType.Binary);
+                    break;
+                
+                case FrameType.Ping:
+                    
+                    connection.Pong(frame.Data);
+                    break;
+                
+                case FrameType.Close:
+                    
+                    await connection.CloseAsync();
+                    return;
+                
+                case FrameType.Pong:
+                case FrameType.Continue:
+                    break;
+            }
+            
             await connection.FlushAsync();
         }
     }
