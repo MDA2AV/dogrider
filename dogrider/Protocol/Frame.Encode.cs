@@ -20,7 +20,7 @@ public static partial class Frame
         var dest = conn.GetSpan(totalLen);
         WriteHeader(dest, payload.Length, opcode, fin);
         
-        payload.CopyTo(dest.Slice(headerLen));
+        payload.CopyTo(dest[headerLen..]);
         conn.Advance(totalLen);
     }
 
